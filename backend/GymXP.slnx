@@ -4,4 +4,5 @@
   <Project Path="GymXP.Domain/GymXP.Domain.csproj" />
   <Project Path="GymXP.Infrastructure/GymXP.Infrastructure.csproj" />
   <Project Path="GymXP.Workflows/GymXP.Workflows.csproj" />
+  <Project Path="GymXP.IntegrationTests/GymXP.IntegrationTests.csproj" />
 </Solution>

@@ -84,11 +84,14 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// --- Auto-migrate on startup ---
+// --- Auto-migrate on startup (skipped for non-relational providers, e.g. in-memory test DB) ---
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
+    if (db.Database.IsRelational())
+        db.Database.Migrate();
+    else
+        db.Database.EnsureCreated();
 }
 
 app.UseMiddleware<GymXP.API.Middleware.ExceptionMiddleware>();
@@ -105,3 +108,4 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+public partial class Program { }
