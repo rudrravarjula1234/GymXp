@@ -77,6 +77,23 @@ services:
       - gymxp_network
     restart: unless-stopped
 
+  # --- GymXP Frontend (Expo Web) ---
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: gymxp_frontend
+    environment:
+      # Use Docker's service-name resolution to reach the API container (port 80 = Kestrel default)
+      - EXPO_PUBLIC_API_BASE_URL=http://api
+    ports:
+      - "19006:19006"
+    depends_on:
+      - api
+    networks:
+      - gymxp_network
+    restart: unless-stopped
+
 volumes:
   postgres_data:
 

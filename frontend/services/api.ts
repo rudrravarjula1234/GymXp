@@ -11,9 +11,11 @@ import type {
   UpsertProfileRequest,
 } from "../types";
 
-// Base URL from app.json extra config or fallback
+// Base URL: prefer EXPO_PUBLIC_ env var (works in Docker/CI), fall back to app.json extra, then localhost
 const API_BASE_URL =
-  Constants.expoConfig?.extra?.API_BASE_URL ?? "http://localhost:5000";
+  process.env.EXPO_PUBLIC_API_BASE_URL ??
+  Constants.expoConfig?.extra?.API_BASE_URL ??
+  "http://localhost:5000";
 
 const TOKEN_KEY = "@gymxp_token";
 
