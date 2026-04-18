@@ -1,0 +1,25 @@
+# .NET build artifacts
+**/bin/
+**/obj/
+*.user
+*.suo
+.vs/
+
+# NuGet
+.nuget/
+
+# Node / React Native
+frontend/node_modules/
+frontend/.expo/
+frontend/dist/
+
+# Docker volumes
+postgres_data/
+
+# Environment secrets (never commit)
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db

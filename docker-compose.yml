@@ -1,0 +1,102 @@
+version: "3.9"
+
+services:
+  # --- PostgreSQL ---
+  postgres:
+    image: postgres:16-alpine
+    container_name: gymxp_postgres
+    environment:
+      POSTGRES_DB: gymxp
+      POSTGRES_USER: gymxp
+      POSTGRES_PASSWORD: gymxp_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gymxp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - gymxp_network
+
+  # --- Temporal Server ---
+  temporal:
+    image: temporalio/auto-setup:1.24
+    container_name: gymxp_temporal
+    environment:
+      - DB=postgresql
+      - DB_PORT=5432
+      - POSTGRES_USER=gymxp
+      - POSTGRES_PWD=gymxp_password
+      - POSTGRES_SEEDS=postgres
+      - DYNAMIC_CONFIG_FILE_PATH=config/dynamicconfig/development-sql.yaml
+    ports:
+      - "7233:7233"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - gymxp_network
+
+  # --- Temporal Web UI ---
+  temporal-ui:
+    image: temporalio/ui:2.26.2
+    container_name: gymxp_temporal_ui
+    environment:
+      - TEMPORAL_ADDRESS=temporal:7233
+      - TEMPORAL_CORS_ORIGINS=http://localhost:3000
+    ports:
+      - "8080:8080"
+    depends_on:
+      - temporal
+    networks:
+      - gymxp_network
+
+  # --- GymXP API ---
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: gymxp_api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=gymxp;Username=gymxp;Password=gymxp_password
+      - JwtSettings__Secret=GymXP_SuperSecretKey_Change_In_Production_32chars!!
+      - JwtSettings__Issuer=GymXP
+      - JwtSettings__Audience=GymXPUsers
+      - OpenAI__ApiKey=${OPENAI_API_KEY:-}
+      - OpenAI__Model=gpt-4o-mini
+    ports:
+      - "5000:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - gymxp_network
+    restart: unless-stopped
+
+  # --- GymXP Frontend (Expo Web) ---
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: gymxp_frontend
+    environment:
+      # Use Docker's service-name resolution to reach the API container (port 80 = Kestrel default)
+      - EXPO_PUBLIC_API_BASE_URL=http://api
+    ports:
+      - "19006:19006"
+    depends_on:
+      - api
+    networks:
+      - gymxp_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  gymxp_network:
+    driver: bridge
